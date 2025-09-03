@@ -41,5 +41,15 @@ public class PosMachine {
         return false;
     }
 
-
+    private List<ReceiptInfo> calculateReceiptInfoByBarcodes(Map<String, Integer> groupBarcodeMap){
+        List<Item> itemsInfo = findItemInfoByBarcodes(List.of(groupBarcodeMap.keySet()));
+        LinkedHashMap<String, Integer> groupBarcodeMap = (LinkedHashMap<String, Integer>) groupBarcodeMap;
+        groupBarcodeMap.forEach((barcode, count) -> {
+            Item item = itemsInfo.stream().filter(i -> i.getBarcode().equals(barcode)).findFirst().orElse(null);
+            if (item != null) {
+                receiptInfoList.add(new ReceiptInfo(item.getBarcode(), item.getName(), count, item.getPrice(), item.getPrice() * count));
+            }
+        });
+        return receiptInfoList;
+    }
 }
