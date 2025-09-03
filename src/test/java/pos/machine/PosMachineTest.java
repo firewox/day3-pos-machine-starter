@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class PosMachineTest {
 
     @Test
-    public void should_return_receipt() {
+    public void should_return_receipt() throws Exception {
         PosMachine posMachine = new PosMachine();
 
         String expected = "***<store earning no money>Receipt***\n" +

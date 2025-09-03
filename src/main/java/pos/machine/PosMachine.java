@@ -1,19 +1,16 @@
 package pos.machine;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import main.java.pos.machine.ReceiptInfo;
-
-import static pos.machine.ItemsLoader.loadAllItems;
-
 public class PosMachine {
     public String printReceipt(List<String> barcodes) throws Exception {
         Map<String,Integer> groupedBarcodeMaps = getGroupBarcodeMaps(barcodes);
-        if (existUnknownBarcode(groupedBarcodeMaps.keySet())) {
-            return new Exception("unknown barcode");
+        if (existUnknownBarcode(new ArrayList<>(groupedBarcodeMaps.keySet()))) {
+            throw new Exception("unknown barcode");
         }
         List<ReceiptInfo> receiptInfoList = calculateReceiptInfoByBarcodes(groupedBarcodeMaps);
         return getReceiptWithFormat(receiptInfoList);
@@ -38,7 +35,7 @@ public class PosMachine {
     }
 
     private boolean existUnknownBarcode(List<String> groupedBarcodeMapKeys) {
-        List<Item> items = loadAllItems();
+        List<Item> items = new ItemsDao().getItems();
         List<String> allBarcodes = items.stream().map(Item::getBarcode).collect(Collectors.toList());
         for (String barcode : groupedBarcodeMapKeys) {
             if (!allBarcodes.contains(barcode)) {
@@ -49,19 +46,15 @@ public class PosMachine {
     }
 
     private List<ReceiptInfo> calculateReceiptInfoByBarcodes(Map<String, Integer> groupBarcodeMap){
-        List<Item> itemsInfo = findItemInfoByBarcodes(List.of(groupBarcodeMap.keySet()));
-        LinkedHashMap<String, Integer> groupBarcodeMap = (LinkedHashMap<String, Integer>) groupBarcodeMap;
+        List<Item> itemsInfo = new ItemsDao().findItemInfoByBarcodes(new ArrayList<>(groupBarcodeMap.keySet()));
+        List<ReceiptInfo> receiptInfoList = new ArrayList<>();
         groupBarcodeMap.forEach((barcode, count) -> {
-            Item item = itemsInfo.stream().filter(i -> i.getBarcode().equals(barcode)).findFirst().orElse(null);
-            if (item != null) {
-                receiptInfoList.add(new ReceiptInfo(item.getBarcode(), item.getName(), count, item.getPrice(), item.getPrice() * count));
-            }
+            itemsInfo.stream().filter(i -> i.getBarcode().equals(barcode)).findFirst().ifPresent(item -> receiptInfoList.add(new ReceiptInfo(item.getBarcode(), item.getName(), count, item.getPrice(), item.getPrice() * count)));
         });
         return receiptInfoList;
     }
 
     /*
-    
     ***<store earning no money>Receipt***
     Name: Coca-Cola, Quantity: 4, Unit price: 3 (yuan), Subtotal: 12 (yuan)
     Name: Sprite, Quantity: 2, Unit price: 3 (yuan), Subtotal: 6 (yuan)
@@ -69,8 +62,6 @@ public class PosMachine {
     ----------------------
     Total: 24 (yuan)
     **********************
-
-
     */
     private String getReceiptWithFormat(List<ReceiptInfo> receiptInfoList) {
         StringBuilder receipt = new StringBuilder();
@@ -81,7 +72,7 @@ public class PosMachine {
         }
         receipt.append("----------------------\n");
         receipt.append(String.format("Total: %d (yuan)\n", receiptInfoList.stream().mapToInt(ReceiptInfo::getTotalPrice).sum()));
-        receipt.append("**********************\n");
+        receipt.append("**********************");
         return receipt.toString();
     }
 }

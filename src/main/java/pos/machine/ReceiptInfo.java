@@ -1,3 +1,4 @@
+package pos.machine;
 
 public class ReceiptInfo {
     private String barcode;
